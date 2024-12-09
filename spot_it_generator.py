@@ -78,8 +78,8 @@ def fetch_images(urls):
             center = (roi_color.shape[1] // 2, roi_color.shape[0] // 2)
             radius = min(roi_color.shape[1] // 2, roi_color.shape[0] // 2)
             # Draw a white circle on the mask
-            cv.circle(mask, center, radius, 255, -1)
-            cv.circle(mask2, center, radius, 0, -1)
+            cv.circle(mask, center, radius, (255, 255, 255), -1)
+            cv.circle(mask2, center, radius, (0, 0, 0), -1)
             # Apply the mask to the image
             masked_image = cv.bitwise_and(roi_color, mask)
             masked_image = cv.bitwise_or(masked_image, mask2)
