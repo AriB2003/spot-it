@@ -3,7 +3,7 @@ import requests
 import cv2 as cv
 import os
 import math
-import random
+import scipy.stats as sp
 from design_templates import m2, urls
 
 
@@ -115,18 +115,29 @@ def rotate_image(image, angle):
     return result
 
 
-def generate_valid_location(origin, locations, distance):
-    
+def generate_valid_location(distance, num_symbols):
+    locations = np.array([[0, 0]], dtype=np.float32)
+    angles = np.linspace(0, 2 * math.pi, num_symbols)
+    for angle in angles[:-1]:
+        random_distance = sp.norm.rvs(loc=distance, scale=distance / 6)
+        locations = np.vstack(
+            [
+                locations,
+                [math.cos(angle) * random_distance, math.sin(angle) * random_distance],
+            ]
+        )
+    return locations.astype(np.float32)
 
 
 def create_canvas(image_directory, num_symbols):
-    shape = cv.imread(os.path.join(".", "source_images", image_directory[0]))
-    locations = [(0,0)]
-    generate_valid_location(locations[0],locations, shape[0])
-    canvas = np.zeros([3 * shape[0], 3 * shape[1], 3], dtype=np.uint8)
+    shape = cv.imread(os.path.join(".", "source_images", image_directory[0])).shape
+    locations = generate_valid_location(2 * shape[0], num_symbols)
+    x, y, w, h = cv.boundingRect(locations)
+    d = max(w, h)
+    canvas = np.zeros([d, d, 3], dtype=np.uint8)
     center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
     radius = min(canvas.shape[1] // 2, canvas.shape[0] // 2)
-    cv.circle(canvas, center, radius, 255, -1)
+    cv.circle(canvas, center, radius, (255, 255, 255), -1)
     return canvas, locations
 
 
@@ -147,4 +158,5 @@ if len(image_directory) < total:
 resize_images(image_directory, scale)
 
 canvas, locations = create_canvas(image_directory, symbols_per_card(m2))
+print(locations)
 cv.imwrite("hi.png", canvas)
