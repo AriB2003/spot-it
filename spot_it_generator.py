@@ -6,6 +6,8 @@ import math
 import random
 import scipy.stats as sp
 from design_templates import m2, urls
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm
 
 
 def template_symbols(design):
@@ -138,10 +140,10 @@ def create_canvas(image_directory, num_symbols):
     # x, y, w, h = cv.boundingRect(locations)
     # d = max(w, h) + shape[0] + 100
     d = 4 * shape[0] + shape[0] + 50
-    canvas = np.zeros([d, d, 3], dtype=np.uint8)
+    canvas = 255 * np.ones([d, d, 3], dtype=np.uint8)
     center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
     radius = min(canvas.shape[1] // 2, canvas.shape[0] // 2)
-    cv.circle(canvas, center, radius, (255, 255, 255), -1)
+    cv.circle(canvas, center, radius, (0, 0, 0), 2)
     print(f"Created Canvas of Size: {d}")
     return canvas, locations
 
@@ -183,6 +185,44 @@ def make_cards(image_directory, design):
         print(f"Made Card With Indices: {indices}")
 
 
+def save_to_pdf(image_directory):
+    # Create a PDF document
+    c = canvas.Canvas(os.path.join(".", "output.pdf"))
+
+    margin = 2.54
+    page_size = [21, 29.7]
+    image_size = 5
+    images_per_row = (page_size[0] - 2 * margin) // image_size
+    nx, ny = (math.ceil(len(image_directory) / images_per_row), images_per_row)
+    x = np.arange(0, nx, 1)
+    y = np.arange(0, ny, 1)
+    xg, yg = np.meshgrid(x, y)
+    yloc_offset = 0
+    # Insert the image
+    for i, path in enumerate(image_directory):
+        image_path = os.path.join(".", "card_output", path)
+        yind = int(i // images_per_row - yloc_offset)
+        xind = int(i % images_per_row)
+        xloc = xg[xind, yind]
+        yloc = yg[xind, yind]
+        if (yloc + 1) * image_size > page_size[1] - 2 * margin:
+            yloc_offset += yind
+            yind = i // images_per_row - yloc_offset
+            yloc = yg[xind, yind]
+            c.showPage()
+        print(f"Drawing {image_path} at {(xloc, yloc)}")
+        c.drawImage(
+            image_path,
+            (margin + yloc * image_size) * cm,
+            (margin + xloc * image_size) * cm,
+            width=image_size * cm,
+            height=image_size * cm,
+        )
+
+    # Save the PDF
+    c.save()
+
+
 scale = False
 # Uncomment to fetch images
 # scale = fetch_images(urls)
@@ -202,3 +242,5 @@ if len(image_directory) < total:
 resize_images(image_directory, scale)
 
 make_cards(image_directory, m2)
+
+save_to_pdf(os.listdir(os.path.join(".", "card_output")))
