@@ -3,6 +3,7 @@ import requests
 import cv2 as cv
 import os
 import math
+import random
 import scipy.stats as sp
 from design_templates import m2, urls
 
@@ -118,27 +119,52 @@ def rotate_image(image, angle):
 def generate_valid_location(distance, num_symbols):
     locations = np.array([[0, 0]], dtype=np.float32)
     angles = np.linspace(0, 2 * math.pi, num_symbols)
+    maximum_distance = 0
     for angle in angles[:-1]:
-        random_distance = sp.norm.rvs(loc=distance, scale=distance / 6)
+        random_distance = sp.norm.rvs(loc=distance, scale=distance / 12)
+        maximum_distance = max(maximum_distance, random_distance)
         locations = np.vstack(
             [
                 locations,
                 [math.cos(angle) * random_distance, math.sin(angle) * random_distance],
             ]
         )
-    return locations.astype(np.float32)
+    return locations.astype(np.float32), int(maximum_distance)
 
 
 def create_canvas(image_directory, num_symbols):
     shape = cv.imread(os.path.join(".", "source_images", image_directory[0])).shape
-    locations = generate_valid_location(2 * shape[0], num_symbols)
-    x, y, w, h = cv.boundingRect(locations)
-    d = max(w, h)
+    locations, md = generate_valid_location(1.5 * shape[0], num_symbols)
+    # x, y, w, h = cv.boundingRect(locations)
+    # d = max(w, h) + shape[0] + 100
+    d = 2 * md + shape[0] + 50
     canvas = np.zeros([d, d, 3], dtype=np.uint8)
     center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
     radius = min(canvas.shape[1] // 2, canvas.shape[0] // 2)
     cv.circle(canvas, center, radius, (255, 255, 255), -1)
+    print(f"Created Canvas of Size: {d}")
     return canvas, locations
+
+
+def paint_images(canvas, locations, image_directory, indices):
+    for i, idx in enumerate(indices):
+        img = cv.imread(os.path.join(".", "source_images", image_directory[idx]))
+        img = rotate_image(img, 360 * random.random())
+        canvas_center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
+        image_center = (img.shape[1] / 2, img.shape[0] / 2)
+        temp = 255 * np.ones(canvas.shape, dtype=np.uint8)
+        # print(canvas.shape)
+        # print(temp.shape)
+        x_min = math.floor(canvas_center[0] + locations[i, 0] - image_center[0])
+        x_max = math.floor(canvas_center[0] + locations[i, 0] + image_center[0])
+        y_min = math.floor(canvas_center[1] + locations[i, 1] - image_center[1])
+        y_max = math.floor(canvas_center[1] + locations[i, 1] + image_center[1])
+        # print((x_min, x_max, y_min, y_max))
+        temp[y_min:y_max, x_min:x_max, :] = img
+        # print(canvas.shape)
+        # print(temp.shape)
+        canvas = cv.bitwise_and(canvas, temp)
+    return canvas
 
 
 scale = False
@@ -158,5 +184,5 @@ if len(image_directory) < total:
 resize_images(image_directory, scale)
 
 canvas, locations = create_canvas(image_directory, symbols_per_card(m2))
-print(locations)
-cv.imwrite("hi.png", canvas)
+card = paint_images(canvas, locations, image_directory, [1, 2, 3, 4, 5, 6])
+cv.imwrite("hi.png", card)
