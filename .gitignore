@@ -163,3 +163,4 @@ cython_debug/
 
 # Source Images
 /source_images
+/card_output

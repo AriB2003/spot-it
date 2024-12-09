@@ -20,7 +20,7 @@ def total_symbols(design):
     tp = template_symbols(design)
     unique = symbols_per_card(design) * len(tp) - np.sum(tp)
     matching = np.size(design, 1)
-    return unique + matching
+    return unique, matching
 
 
 def area_sort(face):
@@ -134,10 +134,10 @@ def generate_valid_location(distance, num_symbols):
 
 def create_canvas(image_directory, num_symbols):
     shape = cv.imread(os.path.join(".", "source_images", image_directory[0])).shape
-    locations, md = generate_valid_location(1.5 * shape[0], num_symbols)
+    locations, _ = generate_valid_location(1.5 * shape[0], num_symbols)
     # x, y, w, h = cv.boundingRect(locations)
     # d = max(w, h) + shape[0] + 100
-    d = 2 * md + shape[0] + 50
+    d = 4 * shape[0] + shape[0] + 50
     canvas = np.zeros([d, d, 3], dtype=np.uint8)
     center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
     radius = min(canvas.shape[1] // 2, canvas.shape[0] // 2)
@@ -148,7 +148,7 @@ def create_canvas(image_directory, num_symbols):
 
 def paint_images(canvas, locations, image_directory, indices):
     for i, idx in enumerate(indices):
-        img = cv.imread(os.path.join(".", "source_images", image_directory[idx]))
+        img = cv.imread(os.path.join(".", "source_images", image_directory[idx - 1]))
         img = rotate_image(img, 360 * random.random())
         canvas_center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
         image_center = (img.shape[1] / 2, img.shape[0] / 2)
@@ -167,12 +167,30 @@ def paint_images(canvas, locations, image_directory, indices):
     return canvas
 
 
+def make_cards(image_directory, design):
+    u, m = total_symbols(design)
+    pc = symbols_per_card(design)
+    counter = m + 1
+    for i in range(design.shape[1]):
+        canvas, locations = create_canvas(image_directory, symbols_per_card(design))
+        indices = np.where(design[:, i] == 1)[0].tolist()
+        while len(indices) < pc:
+            indices.append(counter)
+            counter += 1
+        random.shuffle(indices)
+        card = paint_images(canvas, locations, image_directory, indices)
+        cv.imwrite(os.path.join(".", "card_output", f"card{i+1}.png"), card)
+        print(f"Made Card With Indices: {indices}")
+
+
 scale = False
 # Uncomment to fetch images
 # scale = fetch_images(urls)
 
 total = total_symbols(m2)
 print(f"Required Symbols: {total}")
+total = symbols_per_card(m2)
+print(f"Symbols Per Card: {total}")
 
 image_directory = os.listdir(os.path.join(".", "source_images"))
 print(f"Found Images:\n{"\n".join(image_directory)}")
@@ -183,6 +201,4 @@ if len(image_directory) < total:
 
 resize_images(image_directory, scale)
 
-canvas, locations = create_canvas(image_directory, symbols_per_card(m2))
-card = paint_images(canvas, locations, image_directory, [1, 2, 3, 4, 5, 6])
-cv.imwrite("hi.png", card)
+make_cards(image_directory, m2)
