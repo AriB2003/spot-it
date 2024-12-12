@@ -152,6 +152,8 @@ def paint_images(canvas, locations, image_directory, indices):
     for i, idx in enumerate(indices):
         img = cv.imread(os.path.join(".", "source_images", image_directory[idx - 1]))
         img = rotate_image(img, 360 * random.random())
+        scale = int((random.random() / 2 + 0.83) * img.shape[0])
+        img = cv.resize(img, (scale, scale))
         canvas_center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
         image_center = (img.shape[1] / 2, img.shape[0] / 2)
         temp = 255 * np.ones(canvas.shape, dtype=np.uint8)
