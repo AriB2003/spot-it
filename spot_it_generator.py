@@ -191,32 +191,34 @@ def save_to_pdf(image_directory):
     # Create a PDF document
     c = canvas.Canvas(os.path.join(".", "output.pdf"))
 
-    margin = 2.54
+    margin = 0.25 * 2.54
     page_size = [21, 29.7]
-    image_size = 5
+    image_size = 9
     images_per_row = (page_size[0] - 2 * margin) // image_size
     nx, ny = (math.ceil(len(image_directory) / images_per_row), images_per_row)
     x = np.arange(0, nx, 1)
     y = np.arange(0, ny, 1)
-    xg, yg = np.meshgrid(x, y)
+    yg, xg = np.meshgrid(x, y)
     yloc_offset = 0
+    xloc_offset = 0
+    # print(f"{xg}{yg}")
     # Insert the image
     for i, path in enumerate(image_directory):
         image_path = os.path.join(".", "card_output", path)
-        yind = int(i // images_per_row - yloc_offset)
+        yind = int(i // images_per_row)
         xind = int(i % images_per_row)
         xloc = xg[xind, yind]
-        yloc = yg[xind, yind]
+        yloc = yg[xind, yind - yloc_offset]
         if (yloc + 1) * image_size > page_size[1] - 2 * margin:
-            yloc_offset += yind
-            yind = i // images_per_row - yloc_offset
-            yloc = yg[xind, yind]
+            yloc_offset += yloc
+            yloc = xg[xind, yind - yloc_offset]
+            # print(f"{yloc_offset},{yind-yloc_offset}")
             c.showPage()
         print(f"Drawing {image_path} at {(xloc, yloc)}")
         c.drawImage(
             image_path,
-            (margin + yloc * image_size) * cm,
             (margin + xloc * image_size) * cm,
+            (margin + yloc * image_size) * cm,
             width=image_size * cm,
             height=image_size * cm,
         )
