@@ -150,7 +150,7 @@ def create_canvas(image_directory, num_symbols):
 
 def paint_images(canvas, locations, image_directory, indices):
     for i, idx in enumerate(indices):
-        img = cv.imread(os.path.join(".", "source_images", image_directory[idx - 1]))
+        img = cv.imread(os.path.join(".", "source_images", image_directory[idx]))
         img = rotate_image(img, 360 * random.random())
         scale = int((random.random() / 2 + 0.83) * img.shape[0])
         img = cv.resize(img, (scale, scale))
@@ -174,7 +174,7 @@ def paint_images(canvas, locations, image_directory, indices):
 def make_cards(image_directory, design):
     u, m = total_symbols(design)
     pc = symbols_per_card(design)
-    counter = m + 1
+    counter = m
     for i in range(design.shape[1]):
         canvas, locations = create_canvas(image_directory, symbols_per_card(design))
         indices = np.where(design[:, i] == 1)[0].tolist()
