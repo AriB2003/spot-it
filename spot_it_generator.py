@@ -71,7 +71,7 @@ def fetch_images(urls):
         faces.sort(key=area_sort, reverse=True)
         for j, (x, y, w, h) in enumerate(faces[: url["quantity"]]):
             h = w
-            offset = min(100, x, y, img.shape[1] - x - w, img.shape[0] - y - h)
+            offset = min(w * 2, x, y, img.shape[1] - x - w, img.shape[0] - y - h)
             print(f"Calculated Offset: {offset}")
             roi_color = img[y - offset : y + h + offset, x - offset : x + w + offset]
             mask = np.zeros(roi_color.shape, dtype=np.uint8)
@@ -86,7 +86,7 @@ def fetch_images(urls):
             masked_image = cv.bitwise_and(roi_color, mask)
             masked_image = cv.bitwise_or(masked_image, mask2)
             counter += 1
-            save_path = os.path.join(".", "source_images", f"talktuah{counter}.png")
+            save_path = os.path.join(".", "source_images", f"{counter}.png")
             cv.imwrite(save_path, masked_image)
             print(f"Saved Image: {save_path}")
     return True
@@ -229,17 +229,17 @@ def save_to_pdf(image_directory):
 
 scale = False
 # Uncomment to fetch images
-# scale = fetch_images(urls)
+scale = fetch_images(urls)
 
 total = total_symbols(m2)
 print(f"Required Symbols: {total}")
-total = symbols_per_card(m2)
-print(f"Symbols Per Card: {total}")
+spc = symbols_per_card(m2)
+print(f"Symbols Per Card: {spc}")
 
 image_directory = os.listdir(os.path.join(".", "source_images"))
 print(f"Found Images:\n{"\n".join(image_directory)}")
 
-if len(image_directory) < total:
+if len(image_directory) < total[0] + total[1]:
     print("Not enough images to generate")
     exit(0)
 
