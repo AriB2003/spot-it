@@ -134,7 +134,7 @@ def generate_valid_location(distance, num_symbols):
     return locations.astype(np.float32), int(maximum_distance)
 
 
-def create_canvas(image_directory, num_symbols):
+def create_canvas(image_directory, num_symbols, title=False):
     shape = cv.imread(os.path.join(".", "source_images", image_directory[0])).shape
     locations, _ = generate_valid_location(1.5 * shape[0], num_symbols)
     # x, y, w, h = cv.boundingRect(locations)
@@ -143,6 +143,15 @@ def create_canvas(image_directory, num_symbols):
     canvas = 255 * np.ones([d, d, 3], dtype=np.uint8)
     center = (canvas.shape[1] // 2, canvas.shape[0] // 2)
     radius = min(canvas.shape[1] // 2, canvas.shape[0] // 2)
+    bg = cv.imread(os.path.join(".", "backgrounds", "title.png"))
+    bg = cv.resize(bg, (canvas.shape[0], canvas.shape[1]))
+    bg = rotate_image(bg, 360 * random.random())
+    if not title:
+        bg = cv.addWeighted(canvas, 0.8, bg, 0.2, 0)
+        cv.circle(canvas, center, radius, (0, 0, 0), -1)
+        canvas = cv.bitwise_or(canvas, bg)
+    else:
+        canvas = bg
     cv.circle(canvas, center, radius, (0, 0, 0), 2)
     print(f"Created Canvas of Size: {d}")
     return canvas, locations
@@ -165,6 +174,16 @@ def paint_images(canvas, locations, image_directory, indices):
         y_max = math.floor(canvas_center[1] + locations[i, 1] + image_center[1])
         # print((x_min, x_max, y_min, y_max))
         temp[y_min:y_max, x_min:x_max, :] = img
+        cv.circle(
+            canvas,
+            (
+                math.floor(canvas_center[0] + locations[i, 0]),
+                math.floor(canvas_center[1] + locations[i, 1]),
+            ),
+            (x_max - x_min) // 2,
+            (255, 255, 255),
+            -1,
+        )
         # print(canvas.shape)
         # print(temp.shape)
         canvas = cv.bitwise_and(canvas, temp)
@@ -229,7 +248,7 @@ def save_to_pdf(image_directory):
 
 scale = False
 # Uncomment to fetch images
-scale = fetch_images(urls)
+# scale = fetch_images(urls)
 
 total = total_symbols(m2)
 print(f"Required Symbols: {total}")
@@ -245,6 +264,8 @@ if len(image_directory) < total[0] + total[1]:
 
 resize_images(image_directory, scale)
 
+title, _ = create_canvas(image_directory, symbols_per_card(m2), title=True)
+cv.imwrite(os.path.join(".", "card_output", "card0.png"), title)
 make_cards(image_directory, m2)
 
 save_to_pdf(os.listdir(os.path.join(".", "card_output")))
