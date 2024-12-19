@@ -1,5 +1,10 @@
+""" This module contains design templates and image links. """
+
 import numpy as np
 
+# Design template of a 2 - (13, 13, ~, ~, 2) block design
+# https://www.sciencedirect.com/science/article/pii/S0021980070800291
+# https://doi.org/10.1016/S0021-9800(70)80029-1
 m2 = np.array(
     [
         [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -18,6 +23,7 @@ m2 = np.array(
     ]
 )
 
+# Hawk Tuah Girl Photos for Spit It!
 # urls = [
 #     {
 #         "url": "https://d.newsweek.com/en/full/2463914/haliey-welch.jpg?w=1200&f=daddd6871e66c2facf472a455c0a94d6",
@@ -105,6 +111,8 @@ m2 = np.array(
 #     },
 # ]
 
+# Top 15 Democratic Politicians by Fame
+# https://today.yougov.com/ratings/politics/fame/Democrats/all
 urls = [
     {
         "url": "https://media.cnn.com/api/v1/images/stellar/prod/121101103247-barack-obama-hedshot.jpg?q=w_1916,h_2608,x_0,y_0,c_fill",
